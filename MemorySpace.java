@@ -57,8 +57,24 @@ public class MemorySpace {
 	 *        the length (in words) of the memory block that has to be allocated
 	 * @return the base address of the allocated block, or -1 if unable to allocate
 	 */
-	public int malloc(int length) {		
-		//// Replace the following statement with your code
+	public int malloc(int length) {	
+		//System.out.println("free list: "+freeList);
+		//System.out.println("requested length: "+length);
+		ListIterator itr = freeList.iterator();
+		while (itr.hasNext()) {
+			if (itr.current.block.length < length){
+				itr.next();
+				continue;
+			}
+			MemoryBlock block = new MemoryBlock(itr.current.block.baseAddress, length);
+			allocatedList.addLast(block);
+			if (itr.current.block.length == length) {freeList.remove(itr.current.block);}
+			else {
+				itr.current.block.baseAddress += length;
+				itr.current.block.length -= length;
+			}
+			return allocatedList.getLast().block.baseAddress;
+		}	
 		return -1;
 	}
 
@@ -71,7 +87,19 @@ public class MemorySpace {
 	 *            the starting address of the block to freeList
 	 */
 	public void free(int address) {
-		//// Write your code here
+		if (allocatedList.getSize() == 0) {
+			throw new IllegalArgumentException(
+					"index must be between 0 and size");
+		}
+		ListIterator itr = allocatedList.iterator();
+		while (itr.hasNext()) {
+			if (itr.current.block.baseAddress == address){
+				allocatedList.remove(itr.current.block);
+				freeList.addLast(itr.current.block);
+				break;
+			}
+			itr.next();
+		}
 	}
 	
 	/**
@@ -88,6 +116,19 @@ public class MemorySpace {
 	 * In this implementation Malloc does not call defrag.
 	 */
 	public void defrag() {
-		//// Write your code here
+		ListIterator itr = freeList.iterator();ListIterator itr2 = freeList.iterator();
+		while (itr.hasNext()) {
+			while (itr2.hasNext()) {
+				if (itr.current.block.baseAddress + itr.current.block.length == itr2.current.block.baseAddress) {
+					itr.current.block.length += itr2.current.block.length;
+					freeList.remove(itr2.current.block);
+					itr2 = freeList.iterator();
+				}
+				itr2.next();
+			}
+			itr2 = freeList.iterator();
+			itr.next();
+		}
 	}
 }
+
